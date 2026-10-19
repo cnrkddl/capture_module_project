@@ -1,0 +1,20 @@
+# 실행 중 생기는 파일 (캡쳐 사진, 결과)
+captures/
+results/
+
+# 빌드 결과물
+dist/
+build/
+*.egg-info/
+
+# 파이썬
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 에디터 / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

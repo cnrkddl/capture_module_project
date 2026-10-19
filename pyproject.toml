@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "capture_module"
+version = "0.1.7"
+description = "Basler 카메라 캡쳐 + 재질 분류 모듈"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "opencv-python",
+    "numpy",
+    "ultralytics>=8.4",
+    "pypylon",
+    "flask",
+    "pillow",
+    "websockets==17.1"
+]
+
+[project.scripts]
+capture-server = "capture_module.main:main"   # 설치 후 이 명령어로 웹 화면 실행
+capture-gui = "capture_module.gui:main"       # 설치 후 이 명령어로 GUI 창 실행
+
+[tool.setuptools]
+packages = ["capture_module", "capture_module.camera", "capture_module.utils", "capture_module.camera_stream"]   # 하위 폴더도 하나씩 적어야 포장됨
+
+[tool.setuptools.package-data]
+capture_module = ["templates/*.html", "models/*.pt"]   # 코드 말고 같이 포장할 파일

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Capture Viewer</title>
+  <style>
+    body { margin: 0; padding: 16px; font-family: sans-serif; background: #1e1e1e; color: #eee; }
+    .wrap { max-width: 960px; margin: 0 auto; }
+    /* 영상 영역 높이를 화면의 60%로 고정, 사진은 비율 유지한 채 안에 맞춤 (세로 사진도 버튼이 보이게) */
+    #stream { width: 100%; height: 60vh; object-fit: contain;
+              background: #000; border-radius: 6px; display: block; }
+    .bar { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+    button { font-size: 18px; padding: 10px 24px; border: 0; border-radius: 6px;
+             background: #2d7ff9; color: #fff; cursor: pointer; }
+    button:disabled { background: #555; cursor: default; }
+    #status { color: #aaa; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #333; }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+  <img id="stream" src="/video_feed" alt="video stream"> <!-- 실시간 영상 -->
+
+  <div class="bar">
+    <button id="btn">캡쳐 (Space)</button> <!-- 캡쳐 버튼 -->
+    <span id="status"></span>
+  </div>
+
+  <table>
+    <thead><tr><th>캡쳐 시각</th><th>파일명</th><th>분류 결과</th><th>확률</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+
+<script>
+  const btn = document.getElementById("btn"); // 캡처 버튼
+  const statusEl = document.getElementById("status"); // 메시지 자리
+  const rows = document.getElementById("rows"); // 표
+
+  async function doCapture() { // async : 서버 응답을 기다리는 동안 화면이 멈추지 않게 하는
+    if (btn.disabled) return; // 이미 캡쳐 중이면 무시(중복 클릭 방지)
+    btn.disabled = true; // 버튼 잠금
+    statusEl.textContent = "캡쳐 중...";
+
+    try {
+      const res = await fetch("/capture", { method: "POST" }); // 서버에 캡쳐요청 -> 응답 받음 / await : 서버 응답 올 때까지 기다렸다가 다음 줄로 감
+      const data = await res.json(); // 응답 내용 꺼냄                          
+      if (!res.ok) throw new Error(data.error || res.status); // 상태 코드로 성공, 실패 판단 / res.ok : 상태코드가 200번대이면 true, 아니면 F라서 실패 처리(catch)로 감
+
+      const time = data.captured_at.split("T")[1];        // 2026-10-01T11:07:07 → 11:07:07
+      const prob = data.confidence.toFixed(1) + "%";      // 65.7 → 65.7%
+
+      const tr = document.createElement("tr"); // 표의 새로운 줄
+      for (const v of [time, data.image, data.class, prob]) {
+        const td = document.createElement("td"); // 칸 하나
+        td.textContent = v; // 칸에 값 넣기
+        tr.appendChild(td); // 줄에 칸 붙임
+      }
+      rows.prepend(tr); // 표 맨 위에 새로운 줄 추가
+      statusEl.textContent = `✔ 캡쳐 저장 완료 · ${data.class}일 확률 ${prob}`;
+    } catch (e) { // 실패 했을 때
+      statusEl.textContent = "✖ 캡쳐 실패: " + e.message;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // 버튼, space키 연결
+  btn.addEventListener("click", doCapture); // 버튼 클릭 -> 캡쳐
+  document.addEventListener("keydown", (e) => {
+    if (e.code === "Space") { e.preventDefault(); doCapture(); } // 스페이스 키 -> 캡쳐
+  });
+</script>
+</body>
+</html>
